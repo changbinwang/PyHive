@@ -106,7 +106,8 @@ class Cursor(common.DBAPICursor):
         self._host = host
         self._port = port
         self._username = username or getpass.getuser()
-        self._catalog = catalog
+        self._password = password
+	self._catalog = catalog
         self._schema = schema
         self._arraysize = 1
         self._poll_interval = poll_interval
@@ -120,15 +121,9 @@ class Cursor(common.DBAPICursor):
         self._requests_session = requests_session or requests
 
         requests_kwargs = dict(requests_kwargs) if requests_kwargs is not None else {}
-        if password is not None and 'auth' in requests_kwargs:
-            raise ValueError("Cannot use both password and requests_kwargs authentication")
         for k in ('method', 'url', 'data', 'headers'):
             if k in requests_kwargs:
                 raise ValueError("Cannot override requests argument {}".format(k))
-        if password is not None:
-            requests_kwargs['auth'] = HTTPBasicAuth(username, password)
-            if protocol != 'https':
-                raise ValueError("Protocol must be https when passing a password")
         self._requests_kwargs = requests_kwargs
 
         self._reset_state()
@@ -179,6 +174,7 @@ class Cursor(common.DBAPICursor):
             'X-Presto-Schema': self._schema,
             'X-Presto-Source': self._source,
             'X-Presto-User': self._username,
+	    'X-Presto-Password': self._password,
         }
 
         if self._session_props:
